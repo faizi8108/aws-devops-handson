@@ -1,14 +1,14 @@
 name: EC2 Provisioning with Terraform
 
 on:
-  workflow_dispatch:  # 👈 Manual Run button
+  workflow_dispatch:  # 👈 Adds a "Run workflow" button in GitHub
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
     env:
-      AWS_REGION: ap-south-1
+      AWS_REGION: ap-south-1  # 👈 Change this if you're using another region
 
     steps:
       - name: Checkout Repository
@@ -27,6 +27,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init and Apply
+        working-directory: terraform
         run: |
           terraform init
           terraform apply -auto-approve
