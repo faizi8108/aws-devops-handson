@@ -54,7 +54,8 @@ jobs:
           sudo apt update
           sudo apt install -y python3-pip
           pip3 install ansible
-
+      - name: Create ansible folder
+        run: mkdir -p ansible
       - name: Copy SSH Private Key from GitHub Secret
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > ansible/aws-key.pem
