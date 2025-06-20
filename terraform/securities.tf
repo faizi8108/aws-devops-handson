@@ -3,7 +3,7 @@ data "aws_vpc" "default" {
 }
 
 resource "aws_security_group" "ec2_sg" {
-  name        = "ec2-sg-terraform"
+  name        = "ec2-sg-terraform_ansible_"
   description = "Allow SSH and React app traffic"
   vpc_id      = data.aws_vpc.default.id
 
