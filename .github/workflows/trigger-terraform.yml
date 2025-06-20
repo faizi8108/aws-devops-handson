@@ -9,16 +9,12 @@ on:
   workflow_dispatch:
 
 env:
-  TF_WORKING_DIR: ./terraform/ 
+  TF_WORKING_DIR: ./terraform/
   AWS_REGION: ap-south-1
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: terraform
 
     steps:
       - name: Checkout Repository
@@ -37,12 +33,14 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init and Apply
+        working-directory: terraform
         run: |
           terraform init
           terraform apply -auto-approve
 
       - name: Get EC2 Public IP
         id: get_ip
+        working-directory: terraform
         run: |
           echo "Fetching public IP from Terraform output..."
           PUBLIC_IP=$(terraform output -raw instance_public_ip)
@@ -54,8 +52,10 @@ jobs:
           sudo apt update
           sudo apt install -y python3-pip
           pip3 install ansible
+
       - name: Create ansible folder
         run: mkdir -p ansible
+
       - name: Copy SSH Private Key from GitHub Secret
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > ansible/aws-key.pem
@@ -64,9 +64,7 @@ jobs:
       - name: Create Ansible Inventory File
         run: |
           echo "[react_app]" > ansible/inventory.ini
-          echo "$PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=aws-key.pem ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory.ini
+          echo "${{ env.PUBLIC_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ansible/aws-key.pem ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory.ini
 
       - name: Run Ansible Playbook
-        run: |
-          ansible-playbook -i ansible/inventory.ini ansible/react_deploy.yml
-
+        run: ansible-playbook -i ansible/inventory.ini ansible/react_deploy.yml
