@@ -1,0 +1,51 @@
+---
+- name: Deploy React App on EC2
+  hosts: all
+  become: true
+
+  vars:
+    app_dir: /home/ubuntu/react-app
+
+  tasks:
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install curl (required for Node.js setup)
+      apt:
+        name: curl
+        state: present
+
+    - name: Add Node.js 18.x setup script
+      shell: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+
+    - name: Install Node.js and npm
+      apt:
+        name: nodejs
+        state: present
+
+    - name: Ensure git is installed
+      apt:
+        name: git
+        state: present
+
+    - name: Clone React app repository
+      git:
+        repo: https://github.com/faizi8108/aws-devops-handson.git
+        dest: "{{ app_dir }}"
+        version: main
+        force: yes
+      become: false
+
+    - name: Install npm dependencies
+      npm:
+        path: "{{ app_dir }}"
+      become: false
+
+    - name: Start React app with nohup
+      shell: |
+        nohup npm start > app.log 2>&1 &
+      args:
+        chdir: "{{ app_dir }}"
+      become: false

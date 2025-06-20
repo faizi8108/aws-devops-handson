@@ -1,4 +1,4 @@
-name: EC2 Provisioning with Terraform
+name: EC2 Provisioning with Terraform + React App Deployment with Ansible
 
 on:
   push:
@@ -7,20 +7,18 @@ on:
     paths:
       - 'terraform/**'
   workflow_dispatch:
-    
+
 env:
   TF_WORKING_DIR: ./terraform/ 
+  AWS_REGION: ap-south-1
 
 jobs:
-  terraform:
+  deploy:
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: terraform  
-
-    env:
-      AWS_REGION: ap-south-1
+        working-directory: terraform
 
     steps:
       - name: Checkout Repository
@@ -42,3 +40,32 @@ jobs:
         run: |
           terraform init
           terraform apply -auto-approve
+
+      - name: Get EC2 Public IP
+        id: get_ip
+        run: |
+          echo "Fetching public IP from Terraform output..."
+          PUBLIC_IP=$(terraform output -raw instance_public_ip)
+          echo "PUBLIC_IP=$PUBLIC_IP" >> $GITHUB_ENV
+          echo $PUBLIC_IP
+
+      - name: Set up Python and Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip
+          pip3 install ansible
+
+      - name: Copy SSH Private Key from GitHub Secret
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ansible/aws-key.pem
+          chmod 400 ansible/aws-key.pem
+
+      - name: Create Ansible Inventory File
+        run: |
+          echo "[react_app]" > ansible/inventory.ini
+          echo "$PUBLIC_IP ansible_user=ubuntu ansible_ssh_private_key_file=aws-key.pem ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory.ini
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i ansible/inventory.ini ansible/react_deploy.yml
+
