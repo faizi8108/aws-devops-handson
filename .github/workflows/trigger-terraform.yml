@@ -67,4 +67,8 @@ jobs:
           echo "${{ env.PUBLIC_IP }} ansible_user=ubuntu ansible_ssh_private_key_file=ansible/aws-key.pem ansible_python_interpreter=/usr/bin/python3" >> ansible/inventory.ini
 
       - name: Run Ansible Playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
         run: ansible-playbook -i ansible/inventory.ini ansible/react_deploy.yml
+
+
